@@ -44,7 +44,7 @@ def cifrar_mensaje(clave_publica, mensaje_m):
     print(f"   y^k = ({componente_publica_y})^{exponente_efimero_k} mod {primo_modulo} = {h_elevado_k}")
     cifrado_parte_c2 = (mensaje_m * h_elevado_k) % primo_modulo
     print(f"   c2 = m * y^k mod p = {mensaje_m} * {h_elevado_k} mod {primo_modulo} = {cifrado_parte_c2}")
-    print("   Texto cifrado: C = (c1, c2).\n")
+    print(f"   Texto cifrado: C = (c1, c2) = ({cifrado_parte_c1}, {cifrado_parte_c2})")
     return (cifrado_parte_c1, cifrado_parte_c2)
 
 # --- descifrado ---
