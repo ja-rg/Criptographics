@@ -1,0 +1,83 @@
+# RSA paso a paso con "mini sustitución" y nombres descriptivos
+from math import gcd
+
+from lib.generador_primos import primos_distintos_ndigitos
+
+# --- utilidades ---
+def inverso_modular(valor, modulo):
+    """Devuelve x tal que valor*x ≡ 1 (mod modulo)."""
+    try:
+        return pow(valor, -1, modulo)  # Python 3.8+
+    except TypeError:
+        # Euclides extendido
+        def egcd(a, b):
+            return (a, 1, 0) if b == 0 else (lambda g, x, y: (g, y, x - (a // b) * y))(*egcd(b, a % b))
+        g, x, _ = egcd(valor, modulo)
+        assert g == 1, "No hay inverso: valor y modulo no son coprimos"
+        return x % modulo
+
+# --- generación de claves ---
+def generar_claves_rsa(primo_p, primo_q, exponente_publico_e=None):
+    print("1) Elegir dos primos p y q.")
+    print(f"   p = {primo_p}, q = {primo_q}")
+    modulo_n = primo_p * primo_q
+    phi_de_n = (primo_p - 1) * (primo_q - 1)
+    print("2) Calcular n = p*q y φ(n) = (p-1)*(q-1).")
+    print(f"   n = {primo_p} * {primo_q} = {modulo_n}, φ(n) = ({primo_p}-1)*({primo_q}-1) = {phi_de_n}")
+
+    # e típico: 65537 si es coprimo con phi, si no, buscar otro pequeño impar
+    if exponente_publico_e is None:
+        candidato = 65537 if gcd(65537, phi_de_n) == 1 else 3
+        while gcd(candidato, phi_de_n) != 1:
+            candidato += 2
+        exponente_publico_e = candidato
+    print("3) Elegir exponente público e coprimo con φ(n).")
+    print(f"   e = {exponente_publico_e}  (gcd(e, φ(n)) = (gcd({exponente_publico_e}, {phi_de_n}) = {gcd(exponente_publico_e, phi_de_n)}")
+
+    exponente_privado_d = inverso_modular(exponente_publico_e, phi_de_n)
+    print("4) Calcular exponente privado d = e^{-1} mod φ(n).")
+    print(f"   d = inv({exponente_publico_e}, {phi_de_n}) = {exponente_privado_d}")
+    print(f"   Clave pública: (n, e) = ({modulo_n}, {exponente_publico_e})")
+    print(f"   Clave privada: (n, d) = ({modulo_n}, {exponente_privado_d})\n")
+
+    return (modulo_n, exponente_publico_e), (modulo_n, exponente_privado_d)
+
+# --- cifrado ---
+def cifrar_rsa(clave_publica, mensaje_m):
+    modulo_n, exponente_publico_e = clave_publica
+    assert 0 <= mensaje_m < modulo_n, "m debe cumplir 0 ≤ m < n"
+    print("5) CIFRADO: c = m^e mod n")
+    print(f"   Datos: m = {mensaje_m}, e = {exponente_publico_e}, n = {modulo_n}")
+
+    # Mini sustitución durante el cifrado
+    cifra_c = pow(mensaje_m, exponente_publico_e, modulo_n)
+    print(f"   (Mini sustitución) c = {mensaje_m}^{exponente_publico_e} mod {modulo_n} = {cifra_c}\n")
+    return cifra_c
+
+# --- descifrado ---
+def descifrar_rsa(clave_privada, cifra_c):
+    modulo_n, exponente_privado_d = clave_privada
+    print("6) DESCIFRADO: m = c^d mod n")
+    print(f"   Datos: c = {cifra_c}, d = {exponente_privado_d}, n = {modulo_n}")
+
+    # Mini sustitución antes del resultado final
+    mensaje_recuperado = pow(cifra_c, exponente_privado_d, modulo_n)
+    print(f"   (Mini sustitución) m = {cifra_c}^{exponente_privado_d} mod {modulo_n} = {mensaje_recuperado}\n")
+    return mensaje_recuperado
+
+# --- demo breve (lista para examen) ---
+if __name__ == "__main__":
+    print("=== RSA paso a paso (con mini sustitución) ===")
+    # Primos de ejemplo clásicos para demo de papel
+    p, q = primos_distintos_ndigitos(5, semilla=2025)  # dos primos de 5 dígitos, distintos y reproducibles
+
+    clave_publica, clave_privada = generar_claves_rsa(p, q)  # e se elige automáticamente
+
+    mensaje_original_m = 65  # Debe ser < n (= 3233)
+    cifra = cifrar_rsa(clave_publica, mensaje_original_m)
+    mensaje_descifrado = descifrar_rsa(clave_privada, cifra)
+
+    print("7) Verificación final:")
+    print(f"   Mensaje original   = {mensaje_original_m}")
+    print(f"   Mensaje recuperado = {mensaje_descifrado}")
+    print("   ¿Coinciden? ->", "SÍ ✅" if mensaje_original_m == mensaje_descifrado else "NO ❌")

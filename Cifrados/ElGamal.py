@@ -1,5 +1,7 @@
 # ElGamal paso x paso con "mini sustitución" y nombres descriptivos
-from random import randrange
+from random import Random, randrange
+
+from lib.generador_primos import primo_ndigitos
 
 # --- utilidades ---
 def inverso_modular(valor, primo_modulo):
@@ -65,12 +67,24 @@ def descifrar_mensaje(clave_publica, exponente_privado_x, texto_cifrado_C):
     print(f"   Resultado: m = {mensaje_recuperado}\n")
     return mensaje_recuperado
 
+# --- propuesta g ---
+def proponer_generador_aleatorio(primo_p, semilla=None):
+    """Proponer un generador aleatorio g para el grupo multiplicativo Z/pZ."""
+    rng = Random(semilla)
+    while True:
+        g = rng.randrange(2, primo_p)
+        if pow(g, (primo_p - 1) // 2, primo_p) != 1:
+            return g
+        # Si no es generador, probamos con otro
+        continue
+    
+
 # --- demo breve ---
 if __name__ == "__main__":
     print("=== ElGamal paso x paso (con mini sustitución) ===")
     # Primo pequeño y generador para demo de examen
-    primo_p = 467
-    generador_g = 2
+    primo_p = primo_ndigitos(4, semilla=2026)
+    generador_g = proponer_generador_aleatorio(primo_p, semilla=2026)
 
     clave_publica, exponente_privado_x = generar_claves(primo_p, generador_g)
     mensaje_original_m = 123
