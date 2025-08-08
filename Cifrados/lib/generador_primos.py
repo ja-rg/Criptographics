@@ -10,9 +10,11 @@ def _es_probablemente_primo(n: int, rondas: int, rng: Random) -> bool:
         return True
     if any(n % p == 0 for p in pequeños):
         return False
-    d = n - 1; s = 0
+    d = n - 1
+    s = 0
     while d % 2 == 0:
-        d //= 2; s += 1
+        d //= 2
+        s += 1
     for _ in range(rondas):
         a = rng.randrange(2, n - 2)
         x = pow(a, d, n)
